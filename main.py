@@ -1,12 +1,12 @@
-import threading
 import random
 import time
 import os
-from flask import Flask, jsonify, request
+import threading
+from flask import Flask, jsonify, request, render_template
 
 # Game Constants
-WIDTH, HEIGHT = 20, 20  # Grid size
-TICK_RATE = 0.1  # 100ms per tick for smoother movement
+WIDTH, HEIGHT = 20, 20  # Grid size in cells
+TICK_RATE = 0.1  # Reduce tick rate to make movement smoother
 
 # Game State
 game_started = False
@@ -16,9 +16,6 @@ high_score = 0
 direction = (1, 0)
 snake = [(5, 5), (4, 5), (3, 5)]  # Start with length of 3
 food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
-
-# Flask App
-app = Flask(__name__)
 
 def reset_game():
     global snake, direction, food, game_over, game_started, score
@@ -30,7 +27,7 @@ def reset_game():
     score = 0
 
 def move_snake():
-    """ Moves the snake in the background. """
+    """ Moves the snake forward automatically in the background """
     global food, game_over, snake, game_started, score, high_score
 
     if not game_started or game_over:
@@ -55,15 +52,18 @@ def move_snake():
         snake.pop()  # Remove tail
 
 def game_loop():
-    """ Runs in a background thread to continuously move the snake. """
+    """ Runs in a background thread to keep the snake moving smoothly """
     while True:
         if game_started and not game_over:
             move_snake()
-        time.sleep(TICK_RATE)  # Controls speed
+        time.sleep(TICK_RATE)  # Control game speed
+
+# Flask Web Server
+app = Flask(__name__)
 
 @app.route('/game_state')
 def game_state():
-    """ Returns the current game state to the frontend. """
+    """ Returns game state to the frontend """
     return jsonify({
         "snake": snake,
         "food": food,
@@ -75,7 +75,7 @@ def game_state():
 
 @app.route('/start_game')
 def start_game():
-    """ Starts the game. """
+    """ Resets and starts the game """
     global game_started, game_over
     reset_game()
     game_started = True
@@ -83,7 +83,7 @@ def start_game():
 
 @app.route('/change_direction')
 def change_direction():
-    """ Handles direction change from frontend. """
+    """ Handles direction change from frontend """
     global direction
     key = request.args.get("key")
     if key == "ArrowUp" and direction != (0, 1):
@@ -96,8 +96,15 @@ def change_direction():
         direction = (1, 0)
     return "OK"
 
+@app.route('/')
+def serve_game():
+    """ Serves the frontend game page """
+    return render_template("arcade_snake.html")
+
 if __name__ == '__main__':
-    game_thread = threading.Thread(target=game_loop, daemon=True)  # Run snake movement in the background
+    # Start the game loop in a background thread
+    game_thread = threading.Thread(target=game_loop, daemon=True)
     game_thread.start()
+    
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
