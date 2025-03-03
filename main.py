@@ -13,29 +13,28 @@ high_score = 0
 
 def reset_game():
     global snake, direction, food, game_over, game_started, score
-    snake = [(5, 5), (4, 5),(3, 5)]  # Start with a length of 3
+    snake = [(5, 5), (4, 5), (3, 5)]  # Start with a length of 3
     direction = (1, 0)
     food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
     game_over = False
     game_started = False
     score = 0
 
-# Initialize game state
 reset_game()
 
 def move_snake():
     global food, game_over, snake, game_started, score, high_score
     if not game_started or game_over:
         return
-    
+
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
-    
+
     if head in snake or head[0] < 0 or head[1] < 0 or head[0] >= WIDTH or head[1] >= HEIGHT:
         game_over = True
         if score > high_score:
             high_score = score
         return
-    
+
     snake.insert(0, head)
     if head == food:
         food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
@@ -43,15 +42,20 @@ def move_snake():
     else:
         snake.pop()
 
+# ✅ FIX: Move game loop to `before_first_request`
 def game_loop():
-    global direction, game_over, game_started
     while True:
         if game_started and not game_over:
             move_snake()
-        time.sleep(0.2)  # Control game speed
+        time.sleep(0.2)
 
 # Flask Web Server
 app = Flask(__name__)
+
+@app.before_first_request
+def start_game_thread():
+    game_thread = threading.Thread(target=game_loop, daemon=True)
+    game_thread.start()
 
 @app.route('/game_state')
 def game_state():
@@ -90,6 +94,4 @@ def serve_game():
     return open("arcade_snake.html").read()
 
 if __name__ == '__main__':
-    game_thread = threading.Thread(target=game_loop, daemon=True)
-    game_thread.start()
     app.run(host="0.0.0.0", port=10000)
