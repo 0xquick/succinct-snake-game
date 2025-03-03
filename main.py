@@ -1,10 +1,12 @@
+import threading
 import random
 import time
+import os
 from flask import Flask, jsonify, request
 
 # Game Constants
-WIDTH, HEIGHT = 20, 20  # Grid size in cells
-TICK_RATE = 0.2  # 200ms per tick (same as time.sleep(0.2) in old code)
+WIDTH, HEIGHT = 20, 20  # Grid size
+TICK_RATE = 0.1  # 100ms per tick for smoother movement
 
 # Game State
 game_started = False
@@ -12,30 +14,27 @@ game_over = False
 score = 0
 high_score = 0
 direction = (1, 0)
-last_move_time = time.time()  # Track the last move time
+snake = [(5, 5), (4, 5), (3, 5)]  # Start with length of 3
+food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
+
+# Flask App
+app = Flask(__name__)
 
 def reset_game():
-    global snake, direction, food, game_over, game_started, score, last_move_time
+    global snake, direction, food, game_over, game_started, score
     snake = [(5, 5), (4, 5), (3, 5)]  # Start with length of 3
     direction = (1, 0)
     food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
     game_over = False
     game_started = False
     score = 0
-    last_move_time = time.time()  # Reset movement timer
-
-reset_game()
 
 def move_snake():
-    """ Moves the snake forward if enough time has passed (every TICK_RATE seconds) """
-    global food, game_over, snake, game_started, score, high_score, last_move_time
-    
+    """ Moves the snake in the background. """
+    global food, game_over, snake, game_started, score, high_score
+
     if not game_started or game_over:
         return
-
-    if time.time() - last_move_time < TICK_RATE:  # ✅ Only move every TICK_RATE seconds
-        return
-    last_move_time = time.time()  # ✅ Update last move time
 
     # Compute new head position
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
@@ -55,13 +54,16 @@ def move_snake():
     else:
         snake.pop()  # Remove tail
 
-# Flask Web Server
-app = Flask(__name__)
+def game_loop():
+    """ Runs in a background thread to continuously move the snake. """
+    while True:
+        if game_started and not game_over:
+            move_snake()
+        time.sleep(TICK_RATE)  # Controls speed
 
 @app.route('/game_state')
 def game_state():
-    """ Moves snake and returns game state. """
-    move_snake()  # ✅ Moves the snake only when the frontend requests it
+    """ Returns the current game state to the frontend. """
     return jsonify({
         "snake": snake,
         "food": food,
@@ -73,7 +75,7 @@ def game_state():
 
 @app.route('/start_game')
 def start_game():
-    """ Resets the game and starts playing. """
+    """ Starts the game. """
     global game_started, game_over
     reset_game()
     game_started = True
@@ -94,11 +96,8 @@ def change_direction():
         direction = (1, 0)
     return "OK"
 
-from flask import render_template
-@app.route('/')
-def serve_game():
-    return render_template("arcade_snake.html")
-
 if __name__ == '__main__':
+    game_thread = threading.Thread(target=game_loop, daemon=True)  # Run snake movement in the background
+    game_thread.start()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
