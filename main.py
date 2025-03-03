@@ -94,10 +94,10 @@ def change_direction():
         direction = (1, 0)
     return "OK"
 
+from flask import render_template
 @app.route('/')
 def serve_game():
-    """ Serves the frontend game page. """
-    return open("arcade_snake.html").read()
+    return render_template("arcade_snake.html")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
