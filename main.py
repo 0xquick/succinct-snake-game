@@ -1,10 +1,10 @@
 import random
-import threading
 import time
 from flask import Flask, jsonify, request
 
 # Game Constants
 WIDTH, HEIGHT = 20, 20  # Grid size in cells
+TICK_RATE = 0.2  # 200ms per tick (same as time.sleep(0.2) in old code)
 
 # Game State
 game_started = False
@@ -12,26 +12,32 @@ game_over = False
 score = 0
 high_score = 0
 direction = (1, 0)
-game_loop_started = False  # ✅ Ensure only one game loop starts
+last_move_time = time.time()  # Track the last move time
 
-# Initialize Game
 def reset_game():
-    global snake, direction, food, game_over, game_started, score
-    snake = [(5, 5), (4, 5), (3, 5)]  # Start with a length of 3
+    global snake, direction, food, game_over, game_started, score, last_move_time
+    snake = [(5, 5), (4, 5), (3, 5)]  # Start with length of 3
     direction = (1, 0)
     food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
     game_over = False
     game_started = False
     score = 0
+    last_move_time = time.time()  # Reset movement timer
 
 reset_game()
 
-# Snake Movement Logic
 def move_snake():
-    global food, game_over, snake, game_started, score, high_score
+    """ Moves the snake forward if enough time has passed (every TICK_RATE seconds) """
+    global food, game_over, snake, game_started, score, high_score, last_move_time
+    
     if not game_started or game_over:
         return
 
+    if time.time() - last_move_time < TICK_RATE:  # ✅ Only move every TICK_RATE seconds
+        return
+    last_move_time = time.time()  # ✅ Update last move time
+
+    # Compute new head position
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
 
     # Collision Detection
@@ -44,34 +50,18 @@ def move_snake():
     snake.insert(0, head)  # Move forward
 
     if head == food:
-        food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))  # New food
+        food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))  # Generate new food
         score += 1
     else:
         snake.pop()  # Remove tail
 
-# **Fix: Background Game Loop**
-def game_loop():
-    """ Runs the snake movement in the background every 0.2s. """
-    while True:
-        if game_started and not game_over:
-            move_snake()
-        time.sleep(0.2)  # Controls game speed
-
 # Flask Web Server
 app = Flask(__name__)
 
-@app.before_request
-def start_game_thread():
-    """ ✅ Ensures the game loop starts only once in production. """
-    global game_loop_started
-    if not game_loop_started:
-        game_thread = threading.Thread(target=game_loop, daemon=True)
-        game_thread.start()
-        game_loop_started = True  # Prevents multiple threads
-
 @app.route('/game_state')
 def game_state():
-    """ Returns the current game state for the frontend. """
+    """ Moves snake and returns game state. """
+    move_snake()  # ✅ Moves the snake only when the frontend requests it
     return jsonify({
         "snake": snake,
         "food": food,
