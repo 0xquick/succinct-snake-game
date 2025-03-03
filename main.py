@@ -1,16 +1,16 @@
 import random
-import threading
 import time
 from flask import Flask, jsonify, request
 
 # Game Constants
 WIDTH, HEIGHT = 20, 20  # Grid size in cells
 
-# Score Tracking
+# Game State
 game_started = False
+game_over = False
 score = 0
 high_score = 0
-game_loop_started = False  # ✅ Prevent multiple loops
+direction = (1, 0)
 
 def reset_game():
     global snake, direction, food, game_over, game_started, score
@@ -30,39 +30,27 @@ def move_snake():
 
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
 
+    # Check if snake collides with itself or walls
     if head in snake or head[0] < 0 or head[1] < 0 or head[0] >= WIDTH or head[1] >= HEIGHT:
         game_over = True
         if score > high_score:
             high_score = score
         return
 
-    snake.insert(0, head)
+    snake.insert(0, head)  # Move head forward
+
     if head == food:
-        food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))
+        food = (random.randint(0, WIDTH - 1), random.randint(0, HEIGHT - 1))  # Generate new food
         score += 1
     else:
-        snake.pop()
+        snake.pop()  # Remove tail to maintain length
 
-# ✅ FIX: Ensure game loop starts only once
-def game_loop():
-    while True:
-        if game_started and not game_over:
-            move_snake()
-        time.sleep(0.2)
-
-# Flask Web Server
 app = Flask(__name__)
-
-@app.before_request
-def start_game_thread():
-    global game_loop_started
-    if not game_loop_started:
-        game_thread = threading.Thread(target=game_loop, daemon=True)
-        game_thread.start()
-        game_loop_started = True  # ✅ Prevent multiple starts
 
 @app.route('/game_state')
 def game_state():
+    """ Updates snake movement on each frontend request. """
+    move_snake()  # ✅ This ensures the snake moves without a background thread
     return jsonify({
         "snake": snake,
         "food": food,
