@@ -1,0 +1,33 @@
+# Ignore virtual environments
+venv/
+env/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore logs & temporary files
+*.log
+logs/
+*.sqlite3
+*.db
+
+# Ignore compiled code
+*.so
+*.out
+*.o
+
+# Ignore Flask & Heroku config files
+instance/
+.env
+.flaskenv
+
+# Ignore Heroku & Render build artifacts
+.heroku/
+.render/
