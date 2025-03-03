@@ -10,6 +10,7 @@ WIDTH, HEIGHT = 20, 20  # Grid size in cells
 game_started = False
 score = 0
 high_score = 0
+game_loop_started = False  # ✅ Prevent multiple loops
 
 def reset_game():
     global snake, direction, food, game_over, game_started, score
@@ -42,7 +43,7 @@ def move_snake():
     else:
         snake.pop()
 
-# ✅ FIX: Move game loop to `before_first_request`
+# ✅ FIX: Ensure game loop starts only once
 def game_loop():
     while True:
         if game_started and not game_over:
@@ -52,10 +53,13 @@ def game_loop():
 # Flask Web Server
 app = Flask(__name__)
 
-@app.before_first_request
+@app.before_request
 def start_game_thread():
-    game_thread = threading.Thread(target=game_loop, daemon=True)
-    game_thread.start()
+    global game_loop_started
+    if not game_loop_started:
+        game_thread = threading.Thread(target=game_loop, daemon=True)
+        game_thread.start()
+        game_loop_started = True  # ✅ Prevent multiple starts
 
 @app.route('/game_state')
 def game_state():
