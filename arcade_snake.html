@@ -1,0 +1,414 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Succinct Snake Game 🐍 ✨ </title>
+    <style>
+        body {
+             display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            background: url('/static/image.png') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            overflow: hidden;
+        }
+        .arcade {
+            width: 400px;
+            height: 600px;
+            background: #222;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(255, 20, 147, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 5px solid #ff69b4;
+        }
+        .screen {
+            width: 90%;
+            height: 300px;
+            background: black;
+            border: 5px solid #ff69b4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .scoreboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #ff69b4;
+            font-family: 'Courier New', monospace;
+        }
+        canvas {
+            background: black;
+        }
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+        }
+        .button {
+            width: 80px;
+            height: 40px;
+            background: #ff69b4;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+            box-shadow: 0px 0px 10px rgba(255, 20, 147, 0.8);
+        }
+        .button:hover {
+            background: #ff1493;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="arcade">
+        <h2 style="color: #ff69b4; font-family: 'Courier New', monospace;">Succinct Snake Game 🐍 ✨</h2>
+        <div class="screen">
+            <div class="scoreboard">Score: <span id="score">0</span></div>
+            <canvas id="gameCanvas" width="300" height="300"></canvas>
+        </div>
+        <div class="buttons">
+            <button class="button" onclick="startGame()">Start</button>
+            <button class="button" onclick="resetGame()">Reset</button>
+        </div>
+    </div>
+    
+    <script>
+        let canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+        let scoreDisplay = document.getElementById("score");
+
+        async function updateGame() {
+            let response = await fetch('/game_state');
+            let data = await response.json();
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = "white";
+            data.snake.forEach(part => ctx.fillRect(part[0] * 15, part[1] * 15, 15, 15));
+
+            ctx.fillStyle = "pink";
+            ctx.fillRect(data.food[0] * 15, data.food[1] * 15, 15, 15);
+
+            scoreDisplay.innerText = data.score;
+
+            if (data.game_over) {
+                alert("Game Over! Score: " + data.score);
+                resetGame();
+            }
+        }
+
+        async function startGame() {
+            await fetch('/start_game');
+            setInterval(updateGame, 200);
+        }
+
+        async function resetGame() {
+            await fetch('/start_game');
+        }
+
+        document.addEventListener("keydown", function(event) {
+            fetch("/change_direction?key=" + event.key);
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Succinct Snake Game 🐍 ✨ </title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            background: url('/static/image2.png') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            overflow: hidden;
+        }
+        .arcade {
+    width: 400px;
+    height: 600px;
+    background: #222;
+    border-radius: 15px;
+    box-shadow: 0px 0px 20px rgba(255, 20, 147, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    border: 5px solid #ff69b4;
+    margin-top: 40px; /* Adds space from the top */
+}
+
+        .screen {
+            width: 100%;
+            height: 400px;
+            background: black;
+            border: 5px solid #ff69b4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-top: 40px; /* Adds space from the top */
+        }
+        .creator{
+            position: absolute;
+            top: -50px; /* Moves it above the canvas */
+            left: 10px; /* Aligns to the right */
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 2px solid #ff69b4;
+            box-shadow: 0px 0px 10px rgba(255, 20, 147, 0.8);
+        }
+        .scoreboard {
+            position: absolute;
+            top: -55px; /* Moves it above the canvas */
+            right: 10px; /* Aligns to the right */
+            color: #ff69b4;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 2px solid #ff69b4;
+            box-shadow: 0px 0px 10px rgba(255, 20, 147, 0.8);
+        }
+        
+        canvas {
+            width: 100%;
+            background: black;
+        }
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+        }
+        .button {
+            width: 80px;
+            height: 40px;
+            background: #ff69b4;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+            box-shadow: 0px 0px 10px rgba(255, 20, 147, 0.8);
+        }
+        .button:hover {
+            background: #ff1493;
+            transform: scale(1.1);
+        }
+
+        /* Game Over Popup Styling */
+#popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ff69b4; /* Pink Background */
+    color: white;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0px 0px 15px rgba(255, 20, 147, 0.8);
+    display: none;
+    z-index: 1000;
+    font-family: 'Courier New', monospace;
+    width: 300px;
+}
+
+#popup h1 {
+    font-size: 28px;
+    color: black; /* Black text for contrast */
+    margin-bottom: 10px;
+}
+
+#popup p {
+    font-size: 16px;
+    margin: 5px 0;
+    color: black;
+    font-weight: bold;
+}
+
+#popup span {
+    color: white; /* White Score Text */
+    font-weight: bold;
+}
+
+#popup button {
+    background: black;
+    color: white;
+    padding: 10px 15px;
+    border: 2px solid white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+#popup button:hover {
+    background: white;
+    color: black;
+    border: 2px solid black;
+    transform: scale(1.1);
+}
+
+    </style>
+</head>
+<body>
+    <div class="arcade">
+        <h2 style="color: #ff69b4; font-family: 'Courier New', monospace;">Succinct Snake Game 🐍✨</h2>
+        <div class="screen">
+            <div class="creator">By 0xquick</div>
+            <div class="scoreboard">🐍 Score: <span id="score">0</span></div>
+            <canvas id="gameCanvas" width="300" height="300"></canvas>
+        </div>
+        <div class="buttons">
+            <button class="button" onclick="startGame()">Start</button>
+            <button class="button" onclick="resetGame()">Reset</button>
+        </div>
+    </div>
+
+    <!-- Game Over Popup -->
+    <!-- <div id="popup">
+        <h1>Game Over!</h1>
+        <p>Score: <span id="popupScore">0</span></p>
+        <p>High Score: <span id="popupHighScore">0</span></p>
+        <p style="font-size: 14px;">Play Again !!</p>
+        <p style="font-size: 14px;">Let’s see who the real</p>
+        <p style="font-size: 14px;">#SuccinctRockStars are! 🎮⭐</p>
+
+        <button onclick="startGame()">Press Enter to Play Again</button>
+    </div> -->
+
+    <!-- Game Over Popup -->
+<div id="popup">
+    <h1>💀 Game Over! 💀</h1>
+    <p>Score: <span id="popupScore">0</span></p>
+    <p>High Score: <span id="popupHighScore">0</span></p>
+    <p style="font-size: 14px;">Play Again !! Let’s see </p>
+    <p style="font-size: 14px;"> who the real #SuccinctRockStars are! 🎮⭐</p>
+    <button onclick="startGame()">Play Again</button>
+</div>
+
+
+    <script>
+        let canvas = document.getElementById("gameCanvas");
+let ctx = canvas.getContext("2d");
+let scoreDisplay = document.getElementById("score");
+let popup = document.getElementById("popup");
+let popupScore = document.getElementById("popupScore");
+let popupHighScore = document.getElementById("popupHighScore");
+
+let gameInterval = null;
+let highScore = localStorage.getItem("highScore") || 0;
+
+// Draw the Start Text on the Canvas
+function drawStartText() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    ctx.fillStyle = "white";
+    ctx.font = "18px Courier New";
+    ctx.textAlign = "center";
+    ctx.fillText("Press Button to Start", canvas.width / 2, canvas.height / 2 - 10);
+    ctx.fillText("the Succinct Snake Game", canvas.width / 2, canvas.height / 2 + 15);
+}
+
+// Show text when the page loads
+window.onload = drawStartText;
+
+async function updateGame() {
+    let response = await fetch('/game_state');
+    let data = await response.json();
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    data.snake.forEach(part => ctx.fillRect(part[0] * 15, part[1] * 15, 15, 15));
+
+    ctx.fillStyle = "pink";
+    ctx.fillRect(data.food[0] * 15, data.food[1] * 15, 15, 15);
+
+    scoreDisplay.innerText = data.score;
+
+    if (data.game_over) {
+        stopGame(); // Stop the game interval when game over
+        showGameOverPopup(data.score);
+    }
+}
+
+async function startGame() {
+    popup.style.display = "none"; // Hide the popup
+
+    await fetch('/start_game');
+
+    // Stop any previous interval before starting a new one
+    if (gameInterval) {
+        clearInterval(gameInterval);
+    }
+
+    gameInterval = setInterval(updateGame, 200);
+}
+
+async function resetGame() {
+    await fetch('/start_game');
+
+    // if (gameInterval) {
+    //     clearInterval(gameInterval);
+    // }
+}
+
+document.addEventListener("keydown", function(event) {
+    fetch("/change_direction?key=" + event.key);
+});
+
+function showGameOverPopup(score) {
+    popupScore.textContent = score;
+
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+    }
+
+    popupHighScore.textContent = highScore;
+    popup.style.display = "block";
+}
+
+function stopGame() {
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+}
+
+    </script>
+</body>
+</html>
